@@ -26,6 +26,13 @@
 #include <functional>
 #include <float.h>
 
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
+
 struct clip_logger_state g_logger_state = {clip_log_callback_default, NULL};
 
 //#define CLIP_DEBUG_FUNCTIONS
@@ -1520,7 +1527,21 @@ struct clip_model_loader {
         std::map<std::string, size_t> tensor_offset;
         std::vector<ggml_tensor *> tensors_to_load;
 
+#ifdef _WIN32
+        // Convert UTF-8 to UTF-16 for Windows
+        int wlen = MultiByteToWideChar(CP_UTF8, 0, fname.c_str(), -1, NULL, 0);
+        if (!wlen) {
+            throw std::runtime_error(string_format("%s: failed to convert filename to UTF-16: %s\n", __func__, fname.c_str()));
+        }
+        std::vector<wchar_t> wfname(wlen);
+        wlen = MultiByteToWideChar(CP_UTF8, 0, fname.c_str(), -1, wfname.data(), wlen);
+        if (!wlen) {
+            throw std::runtime_error(string_format("%s: failed to convert filename to UTF-16: %s\n", __func__, fname.c_str()));
+        }
+        auto fin = std::ifstream(wfname.data(), std::ios::binary);
+#else
         auto fin = std::ifstream(fname, std::ios::binary);
+#endif
         if (!fin) {
             throw std::runtime_error(string_format("%s: failed to open %s\n", __func__, fname.c_str()));
         }
