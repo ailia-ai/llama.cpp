@@ -24,6 +24,26 @@
 static const NSInteger MTLGPUFamilyMetal3_GGML = 5001;
 static const NSInteger MTLGPUFamilyMetal4_GGML = 5002;
 
+// Fix: Explicitly set MSL version to ensure BF16 kernel availability
+// Unity and other host processes may default to MSL 2.4 due to their deployment target,
+// which causes __METAL_VERSION__ < 310 and disables BF16 support
+static void ggml_metal_set_language_version(MTLCompileOptions * options) {
+#if defined(MTLLanguageVersion3_2)
+    if (@available(macOS 14.0, iOS 17.0, *)) {
+        options.languageVersion = MTLLanguageVersion3_2;
+    }
+#if defined(MTLLanguageVersion3_1)
+    else if (@available(macOS 13.0, iOS 16.0, *)) {
+        options.languageVersion = MTLLanguageVersion3_1;
+    }
+#endif
+#elif defined(MTLLanguageVersion3_1)
+    if (@available(macOS 13.0, iOS 16.0, *)) {
+        options.languageVersion = MTLLanguageVersion3_1;
+    }
+#endif
+}
+
 #if !GGML_METAL_EMBED_LIBRARY
 // Here to assist with NSBundle Path Hack
 @interface GGMLMetalClass : NSObject
@@ -227,14 +247,7 @@ ggml_metal_library_t ggml_metal_library_init(ggml_metal_device_t dev) {
                 MTLCompileOptions * options = [MTLCompileOptions new];
                 options.preprocessorMacros = prep;
 
-                // Fix: Explicitly set MSL version to ensure BF16 kernel availability
-                // Unity and other host processes may default to MSL 2.4 due to their deployment target,
-                // which causes __METAL_VERSION__ < 310 and disables BF16 support
-                if (@available(macOS 14.0, iOS 17.0, *)) {
-                    options.languageVersion = MTLLanguageVersion3_2;
-                } else if (@available(macOS 13.0, iOS 16.0, *)) {
-                    options.languageVersion = MTLLanguageVersion3_1;
-                }
+                ggml_metal_set_language_version(options);
 
                 //[options setFastMathEnabled:false];
 
@@ -293,14 +306,7 @@ ggml_metal_library_t ggml_metal_library_init_from_source(ggml_metal_device_t dev
         MTLCompileOptions * options = [MTLCompileOptions new];
         options.preprocessorMacros = prep;
 
-        // Fix: Explicitly set MSL version to ensure BF16 kernel availability
-        // Unity and other host processes may default to MSL 2.4 due to their deployment target,
-        // which causes __METAL_VERSION__ < 310 and disables BF16 support
-        if (@available(macOS 14.0, iOS 17.0, *)) {
-            options.languageVersion = MTLLanguageVersion3_2;
-        } else if (@available(macOS 13.0, iOS 16.0, *)) {
-            options.languageVersion = MTLLanguageVersion3_1;
-        }
+        ggml_metal_set_language_version(options);
 
         library = [device newLibraryWithSource:src options:options error:&error];
         if (error) {
