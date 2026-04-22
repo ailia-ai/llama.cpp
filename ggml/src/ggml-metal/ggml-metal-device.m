@@ -28,19 +28,26 @@ static const NSInteger MTLGPUFamilyMetal4_GGML = 5002;
 // Unity and other host processes may default to MSL 2.4 due to their deployment target,
 // which causes __METAL_VERSION__ < 310 and disables BF16 support
 static void ggml_metal_set_language_version(MTLCompileOptions * options) {
-#if defined(MTLLanguageVersion3_2)
+    // MTLLanguageVersion3_2 is available in macOS 14.0+ SDK (140000)
+    // MTLLanguageVersion3_1 is available in macOS 13.0+ SDK (130000)
+#if (TARGET_OS_OSX && __MAC_OS_X_VERSION_MAX_ALLOWED >= 140000) || \
+    (TARGET_OS_IOS && __IPHONE_OS_VERSION_MAX_ALLOWED >= 170000)
     if (@available(macOS 14.0, iOS 17.0, *)) {
         options.languageVersion = MTLLanguageVersion3_2;
     }
-#if defined(MTLLanguageVersion3_1)
+#if (TARGET_OS_OSX && __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000) || \
+    (TARGET_OS_IOS && __IPHONE_OS_VERSION_MAX_ALLOWED >= 160000)
     else if (@available(macOS 13.0, iOS 16.0, *)) {
         options.languageVersion = MTLLanguageVersion3_1;
     }
 #endif
-#elif defined(MTLLanguageVersion3_1)
+#elif (TARGET_OS_OSX && __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000) || \
+      (TARGET_OS_IOS && __IPHONE_OS_VERSION_MAX_ALLOWED >= 160000)
     if (@available(macOS 13.0, iOS 16.0, *)) {
         options.languageVersion = MTLLanguageVersion3_1;
     }
+#else
+    (void)options;
 #endif
 }
 
