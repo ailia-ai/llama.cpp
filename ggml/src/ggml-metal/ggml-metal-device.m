@@ -230,9 +230,7 @@ ggml_metal_library_t ggml_metal_library_init(ggml_metal_device_t dev) {
                 // Fix: Explicitly set MSL version to ensure BF16 kernel availability
                 // Unity and other host processes may default to MSL 2.4 due to their deployment target,
                 // which causes __METAL_VERSION__ < 310 and disables BF16 support
-                if (@available(macOS 14.0, iOS 17.0, *)) {
-                    options.languageVersion = MTLLanguageVersion3_2;
-                } else if (@available(macOS 13.0, iOS 16.0, *)) {
+                if (@available(macOS 13.0, iOS 16.0, *)) {
                     options.languageVersion = MTLLanguageVersion3_1;
                 }
 
@@ -296,9 +294,7 @@ ggml_metal_library_t ggml_metal_library_init_from_source(ggml_metal_device_t dev
         // Fix: Explicitly set MSL version to ensure BF16 kernel availability
         // Unity and other host processes may default to MSL 2.4 due to their deployment target,
         // which causes __METAL_VERSION__ < 310 and disables BF16 support
-        if (@available(macOS 14.0, iOS 17.0, *)) {
-            options.languageVersion = MTLLanguageVersion3_2;
-        } else if (@available(macOS 13.0, iOS 16.0, *)) {
+        if (@available(macOS 13.0, iOS 16.0, *)) {
             options.languageVersion = MTLLanguageVersion3_1;
         }
 
